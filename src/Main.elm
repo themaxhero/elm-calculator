@@ -52,9 +52,9 @@ applyOperator a b c =
 
         Divide ->
             if not <| b == 0 && c == 0 then
-                "No Divisions by 0 here"
-            else
                 Basics.toString (b / c)
+            else
+                "No Divisions by 0 here"
 
         Multiply ->
             Basics.toString (b * c)
