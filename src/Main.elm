@@ -51,7 +51,10 @@ applyOperator a b c =
             Basics.toString (b - c)
 
         Divide ->
-            Basics.toString (b / c)
+            if not <| b == 0 && c == 0 then
+                "No Divisions by 0 here"
+            else
+                Basics.toString (b / c)
 
         Multiply ->
             Basics.toString (b * c)
