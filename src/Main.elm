@@ -243,22 +243,25 @@ update msg ({ display, lastNum, operator } as model) =
             { display = "", lastNum = "", operator = None }
 
         Apply ->
-            let
-                a =
-                    String.toFloat lastNum
+            if not <| display == "" || lastNum == "" then
+                let
+                    a =
+                        String.toFloat lastNum
 
-                b =
-                    String.toFloat display
+                    b =
+                        String.toFloat display
 
-                result =
-                    uncurryResult a b
-            in
-            case result of
-                Ok ( floatA, floatB ) ->
-                    { display = applyOperator operator floatA floatB, operator = None, lastNum = "" }
+                    result =
+                        uncurryResult a b
+                in
+                case result of
+                    Ok ( floatA, floatB ) ->
+                        { display = applyOperator operator floatA floatB, operator = None, lastNum = "" }
 
-                Err str ->
-                    { model | display = str }
+                    Err str ->
+                        { model | display = str }
+            else
+                model
 
 
 view : Manequin -> Html Msg
