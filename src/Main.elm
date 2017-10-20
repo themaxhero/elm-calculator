@@ -280,8 +280,8 @@ view model =
             , ( "border", "3px solid #FF0000" )
             ]
         ]
-        [ div [ style [ ( "height", "30px" ), ( "width", "120px" ) ] ] [ text model.lastNum ]
-        , div [ style [ ( "height", "30px" ), ( "width", "120px" ) ] ] [ text model.display ]
+        [ div [ style [ ( "border", "1px solid #FF0000" ), ( "height", "30px" ), ( "width", "200px" ) ] ] [ text model.lastNum ]
+        , div [ style [ ( "border", "1px solid #FF0000" ), ( "height", "30px" ), ( "width", "200px" ) ] ] [ text model.display ]
         , button [ buttonStyle, onClick Percent ] [ text "%" ]
         , button [ buttonStyle, onClick (RootOperation Sqrt) ] [ text "√" ]
         , button [ buttonStyle, onClick Squared ] [ text "x²" ]
