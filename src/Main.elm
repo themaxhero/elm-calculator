@@ -11,14 +11,19 @@ import Html.Events exposing (onClick)
 main =
     Html.beginnerProgram { model = { lastNum = "", operator = None, display = "" }, view = view, update = update }
 
-unsafeToFloat : Result a Float -> Float
-unsafeToFloat result =
-    case result of
-        Ok float ->
-            float
+convAux : Manequin -> Manequin
+convAux x =
+    case (String.toFloat x.lastNum) of
+        Ok floatA ->
+            case (String.toFloat x.display) of
+                Ok floatB ->
+                    { x |  display = applyOperator x.operator floatA floatB}
+            
+                Err str -> 
+                    { x | display = str}
 
-        Err _ ->
-            0.0
+        Err str -> 
+            { x | display = str}
 
 applyOperator : BOperator -> Float -> Float -> String
 applyOperator a b c =
@@ -30,8 +35,8 @@ applyOperator a b c =
             Basics.toString (b - c)
 
         Divide ->
-            if not <| b == 0 && c == 0 then
-                "No Divisions by 0 here"
+            if b == 0 || c == 0 then
+                Debug.crash "Impossível Dividir por Zero"
             else
                 Basics.toString (b / c)
 
@@ -42,7 +47,69 @@ applyOperator a b c =
             Basics.toString (b ^ c)
 
         _ ->
-            Debug.crash "Algo deu errado"
+            Debug.crash "Operador inválido: " a
+
+applySqrt : String -> String
+applySqrt x =
+    case (String.toFloat x) of
+        Ok float ->
+            toString(sqrt float)
+        Err str ->
+            str
+
+applyPercentage : String -> String -> String
+applyPercentage x y = 
+    case (String.toFloat x) of
+        Ok floatA ->
+            case (String.toFloat y) of
+                Ok floatB ->
+                    toString((floatA / 100)*floatB)
+                Err str -> 
+                    str
+        Err str ->
+            str
+
+applySquared : String -> String
+applySquared x =
+    case (String.toFloat x) of
+        Ok float ->
+            toString(float ^ 2)
+        Err str ->
+            str
+
+applyUnderOne : String -> String
+applyUnderOne x = 
+    case (String.toFloat x) of
+        Ok float ->
+            toString(1 / float)
+        Err str ->
+            str
+
+applySignalChange : String -> String
+applySignalChange x = 
+    case (String.toFloat x) of
+        Ok float ->
+            toString(-1 * float)
+        Err str ->
+            str
+
+uncurryResult : Result e a -> Result e b -> Result e (a, b)
+uncurryResult resultA resultB =
+    case resultA of
+        Ok a ->
+            case resultB of
+                Ok b ->
+                    Ok (a, b)
+                Err e ->
+                    Err e
+        Err e ->
+            Err e
+
+type alias Manequin = {
+    lastNum  : String,
+    operator : BOperator,
+    display  : String
+}
 
 type Msg
     = Input String
@@ -72,81 +139,50 @@ type VOperator
 update msg ({display, lastNum, operator} as model) =
     case msg of
         Input string ->
-            if display == "" && string == "0" then
-                model
+            if not <| display == "" then
+                case (String.toFloat display) of
+                    Ok float -> 
+                        if display == "" && string == "0" then
+                            model
+                        else
+                            {model | display = display ++ string}
+                    Err str->
+                        model
             else
-                {model | display = display ++ string}
+                if display == "" && string == "0" then
+                    model
+                else
+                    {model | display = display ++ string}
 
         BinaryOperation op ->
-            {lastNum = display, operator = op, display = ""}
+            {model | lastNum = display, operator = op, display = ""}
         
         RootOperation op ->
-            {model | display = display
-                        |> String.toFloat 
-                        |> unsafeToFloat
-                        |> sqrt
-                        |> toString
-            }
+            {model | display = applySqrt display}
         
         Percent -> 
             if not <| lastNum == "" then
-        
-                case operator of
-        
-                    Multiply -> 
-                        {model | display = display
-                                           |> String.toFloat
-                                           |> unsafeToFloat
-                                           |> flip (/) 100.0
-                                           |> toString
-                        }
-        
-                    _ ->
-                        let
-                            left =
-                                lastNum
-                                |>String.toFloat
-                                |> unsafeToFloat
-                                |> flip (/) 100.0
-
-                            right =
-                                display
-                                |> String.toFloat
-                                |> unsafeToFloat
-                        in
-                        {model | display = toString(left * right)}
-
+                {model | display = applyPercentage lastNum display}
             else
                 model
 
         Squared -> 
-            {model | display = display
-                                |> String.toFloat
-                                |> unsafeToFloat
-                                |> flip (^) 2
-                                |> toString
-                            }
+            {model | display = applySquared display}
 
         
         UnderOne -> 
-            {model | display = display
-                                |> String.toFloat
-                                |> unsafeToFloat
-                                |> (/) 1
-                                |> toString
-                            }
+            {model | display = applyUnderOne display}
+
         ChangeSignal ->
-            {model | display = display
-                                |> String.toFloat
-                                |> unsafeToFloat
-                                |> (*) -1
-                                |> toString
-                            }
+            if model.display == "" then
+                model
+            else
+                {model | display = applySignalChange display}
         
         Comma ->
             let 
                 comma     = String.contains "." display
-                nocomma   = not <|  comma
+                nocomma   = not comma
                 empty     = String.length display == 0
                 notempty  = not empty
             in 
@@ -168,25 +204,32 @@ update msg ({display, lastNum, operator} as model) =
         
         Apply ->
             let 
-                a = 
-                    unsafeToFloat(String.toFloat(lastNum))
-                b = 
-                    unsafeToFloat(String.toFloat(display))
+                a = String.toFloat(lastNum)
+                b = String.toFloat(display)
+                result = uncurryResult a b
             in
-            { model | display = 
-                                applyOperator operator a b,
-                                operator = None,
-                                lastNum = ""
-                            }
+            case result of 
+                Ok (floatA, floatB) ->
+                    {display = applyOperator operator floatA floatB, operator = None, lastNum = ""}
+                Err str ->
+                    { model | display = str}
 
 view model =
     let
         buttonStyle = 
             style[("height", "30px"), ("width", "30px")] 
     in
-    div []
-    [ div [][text model.lastNum]
-    , div [][text model.display]
+    div [style
+                [("position", "fixed")
+                , ("left", "40%")
+                , ("top", "25%")
+                , ("z-index","-1")
+                , ("width", "200px")
+                , ("border", "3px solid #FF0000")
+                ]
+        ]
+    [ div [style[("height", "30px"),("width", "120px")]][text model.lastNum]
+    , div [style[("height", "30px"),("width", "120px")]][text model.display]
     , button [buttonStyle, onClick Percent][text "%"]
     , button [buttonStyle, onClick (RootOperation Sqrt)][text "√"]
     , button [buttonStyle, onClick Squared][text "x²"]
