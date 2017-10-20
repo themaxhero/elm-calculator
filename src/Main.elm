@@ -50,6 +50,22 @@ main : Program Never Manequin Msg
 main =
     Html.beginnerProgram { model = { lastNum = "", operator = None, display = "" }, view = view, update = update }
 
+
+convAux : Manequin -> Manequin
+convAux x =
+    case String.toFloat x.lastNum of
+        Ok floatA ->
+            case String.toFloat x.display of
+                Ok floatB ->
+                    { x | display = applyOperator x.operator floatA floatB }
+
+                Err str ->
+                    { x | display = str }
+
+        Err str ->
+            { x | display = str }
+
+
 applyOperator : BOperator -> Float -> Float -> String
 applyOperator a b c =
     case a of
@@ -61,7 +77,7 @@ applyOperator a b c =
 
         Divide ->
             if b == 0 || c == 0 then
-                "Impossível Dividir por Zero"
+                Debug.crash "Impossível Dividir por Zero"
             else
                 Basics.toString (b / c)
 
@@ -165,7 +181,15 @@ update msg ({ display, lastNum, operator } as model) =
                 { model | display = display ++ string }
 
         BinaryOperation op ->
-            { model | lastNum = display, operator = op, display = "" }
+            if not <| display == "" then
+                case String.toFloat display of
+                    Ok float ->
+                        { lastNum = display, operator = op, display = "" }
+
+                    Err str ->
+                        { model | display = str }
+            else
+                model
 
         RootOperation op ->
             { model | display = applySqrt display }
