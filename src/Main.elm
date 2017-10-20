@@ -50,22 +50,6 @@ main : Program Never Manequin Msg
 main =
     Html.beginnerProgram { model = { lastNum = "", operator = None, display = "" }, view = view, update = update }
 
-
-convAux : Manequin -> Manequin
-convAux x =
-    case String.toFloat x.lastNum of
-        Ok floatA ->
-            case String.toFloat x.display of
-                Ok floatB ->
-                    { x | display = applyOperator x.operator floatA floatB }
-
-                Err str ->
-                    { x | display = str }
-
-        Err str ->
-            { x | display = str }
-
-
 applyOperator : BOperator -> Float -> Float -> String
 applyOperator a b c =
     case a of
