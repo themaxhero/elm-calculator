@@ -77,7 +77,7 @@ applyOperator a b c =
 
         Divide ->
             if b == 0 || c == 0 then
-                Debug.crash "Impossível Dividir por Zero"
+                "Impossível Dividir por Zero"
             else
                 Basics.toString (b / c)
 
@@ -88,7 +88,7 @@ applyOperator a b c =
             Basics.toString (b ^ c)
 
         _ ->
-            Debug.crash "Operador inválido: " a
+            "Operador inválido: " ++ (toString a)
 
 
 applySqrt : String -> String
